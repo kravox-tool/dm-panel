@@ -58,21 +58,21 @@ html, body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    padding: calc(var(--safe-top) + 10px) 10px calc(var(--safe-bottom) + 14px) 10px;
+    padding: calc(var(--safe-top) + 8px) 8px calc(var(--safe-bottom) + 12px) 8px;
     max-width: 900px;
     margin: 0 auto;
 }
 
-/* RESPONSIVE ASCII BANNER (No Overflow / Shrinks to fit screen) */
+/* RESPONSIVE ASCII BANNER */
 .terminal-header {
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     width: 100%;
     overflow: hidden;
 }
 
 .header-status-bar {
     display: flex;
-    gap: 6px;
+    gap: 4px;
     margin-bottom: 6px;
     flex-wrap: wrap;
 }
@@ -81,8 +81,8 @@ html, body {
     background: #1a0202;
     border: 1px solid var(--border-color);
     color: var(--text-bright);
-    padding: 2px 6px;
-    font-size: 11px;
+    padding: 2px 5px;
+    font-size: 10px;
     font-weight: bold;
     border-radius: 3px;
     text-shadow: 0 0 4px rgba(255, 30, 30, 0.6);
@@ -95,7 +95,7 @@ html, body {
 
 .ascii-art {
     color: var(--text-primary);
-    font-size: clamp(6px, 2.2vw, 12px); /* Responsive auto-scaling */
+    font-size: clamp(5.5px, 2.1vw, 11px);
     line-height: 1.1;
     font-weight: bold;
     white-space: pre;
@@ -114,7 +114,7 @@ html, body {
 .divider {
     color: var(--border-color);
     font-weight: bold;
-    font-size: clamp(8px, 2.5vw, 13px);
+    font-size: clamp(8px, 2.5vw, 12px);
     overflow-x: hidden;
     white-space: nowrap;
     user-select: none;
@@ -127,11 +127,11 @@ html, body {
     letter-spacing: 2px;
     color: var(--text-bright);
     margin: 4px 0;
-    font-size: clamp(12px, 3.5vw, 15px);
+    font-size: clamp(11px, 3.2vw, 14px);
     text-shadow: 0 0 6px rgba(255, 50, 50, 0.9);
 }
 
-/* SINGLE-SCREEN NAVIGATION & BACK BUTTON STYLING */
+/* BACK BUTTON */
 .btn-back-menu {
     display: flex;
     align-items: center;
@@ -142,12 +142,12 @@ html, body {
     color: var(--text-bright);
     font-family: var(--font-mono);
     font-weight: bold;
-    font-size: 13px;
-    padding: 8px 12px;
+    font-size: 12px;
+    padding: 8px 10px;
     border-radius: 4px;
     cursor: pointer;
-    margin-bottom: 12px;
-    transition: background 0.15s ease, transform 0.1s ease;
+    margin-bottom: 10px;
+    transition: background 0.15s ease;
     width: 100%;
     text-transform: uppercase;
 }
@@ -155,55 +155,50 @@ html, body {
 .btn-back-menu:active {
     background: var(--border-color);
     color: #000;
-    transform: scale(0.98);
 }
 
 /* Main Menu Items List */
 .menu-section {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    margin-bottom: 12px;
-    transition: opacity 0.2s ease;
+    gap: 5px;
+    margin-bottom: 10px;
 }
 
 .menu-item {
     display: flex;
     align-items: baseline;
-    gap: 10px;
+    gap: 8px;
     padding: 8px 10px;
     background: var(--panel-bg);
     border: 1px solid #3d0808;
     border-radius: 4px;
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
-    transform: translateZ(0);
+    transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .menu-item:active {
     background: #3a0808;
     border-color: var(--border-color);
-    transform: scale(0.99);
 }
 
 .option-num {
     color: var(--text-primary);
     font-weight: bold;
-    font-size: 15px;
-    min-width: 32px;
-    text-shadow: 0 0 4px rgba(255, 0, 0, 0.7);
+    font-size: 14px;
+    min-width: 28px;
 }
 
 .option-title {
     color: var(--text-bright);
     font-weight: bold;
-    font-size: 15px;
-    min-width: 90px;
+    font-size: 14px;
+    min-width: 80px;
 }
 
 .option-desc {
     color: #cc6666;
-    font-size: 13px;
+    font-size: 12px;
     flex: 1;
 }
 
@@ -214,7 +209,7 @@ html, body {
 /* Quick Navigation Row */
 .quick-nav {
     display: flex;
-    gap: 6px;
+    gap: 5px;
     overflow-x: auto;
     padding-bottom: 6px;
     margin-bottom: 8px;
@@ -226,12 +221,11 @@ html, body {
     border: 1px solid #4a0a0a;
     color: var(--text-bright);
     font-family: var(--font-mono);
-    font-size: 12px;
-    padding: 6px 10px;
+    font-size: 11px;
+    padding: 5px 8px;
     border-radius: 3px;
     white-space: nowrap;
     cursor: pointer;
-    transition: all 0.15s ease;
 }
 
 .quick-nav button:active {
@@ -239,49 +233,62 @@ html, body {
     color: #000;
 }
 
-/* Command Prompt Input Bar */
+/* RESPONSIVE PROMPT BAR (FIXED OVERFLOW BUTTON) */
 .prompt-bar {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    gap: 6px;
     background: #120101;
     border: 1px solid var(--border-color);
-    padding: 8px 12px;
+    padding: 8px 10px;
     border-radius: 4px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     box-shadow: 0 0 10px rgba(255, 0, 0, 0.25);
+    width: 100%;
+}
+
+.prompt-input-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
 }
 
 .prompt-symbol {
     color: var(--text-primary);
     font-weight: bold;
     white-space: nowrap;
-    font-size: clamp(12px, 3.2vw, 15px);
+    font-size: 13px;
 }
 
 .cli-input {
     flex: 1;
+    min-width: 0; /* Prevents input from forcing flex container overflow */
     background: transparent;
     border: none;
     outline: none;
     color: #fff;
     font-family: var(--font-mono);
-    font-size: 15px;
+    font-size: 14px;
     caret-color: var(--text-primary);
 }
 
-.btn-send {
+.btn-send-block {
     background: var(--border-color);
     color: #000;
     border: none;
     font-weight: bold;
     font-family: var(--font-mono);
-    padding: 6px 12px;
+    font-size: 13px;
+    padding: 8px 12px;
     border-radius: 3px;
     cursor: pointer;
+    width: 100%;
+    text-align: center;
+    text-transform: uppercase;
 }
 
-.btn-send:active {
+.btn-send-block:active {
     opacity: 0.8;
 }
 
@@ -289,9 +296,9 @@ html, body {
 .action-panel {
     background: var(--panel-bg);
     border: 1px dashed var(--border-color);
-    padding: 12px;
+    padding: 10px;
     border-radius: 6px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     animation: fadeIn 0.2s ease-out;
 }
 
@@ -303,16 +310,16 @@ html, body {
     text-align: center;
     color: var(--text-bright);
     font-weight: bold;
-    margin: 6px 0 10px 0;
-    font-size: clamp(13px, 3.5vw, 16px);
+    margin: 4px 0 8px 0;
+    font-size: 14px;
 }
 
 .section-label {
     color: var(--text-primary);
     font-weight: bold;
-    margin-top: 10px;
+    margin-top: 8px;
     margin-bottom: 4px;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .section-label-cyan { color: var(--text-cyan); }
@@ -321,17 +328,17 @@ html, body {
 
 .cyan-box {
     border: 1px solid var(--text-cyan);
-    padding: 8px 12px;
+    padding: 6px 10px;
     color: var(--text-cyan);
     font-weight: bold;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     text-align: center;
 }
 
 .wizard-step-box {
     border: 1px solid #3a0808;
-    padding: 10px;
-    margin-bottom: 10px;
+    padding: 8px;
+    margin-bottom: 8px;
     border-radius: 4px;
     background: #080000;
 }
@@ -343,7 +350,7 @@ html, body {
 .wizard-prompt-line {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     margin-top: 4px;
     flex-wrap: wrap;
 }
@@ -351,13 +358,13 @@ html, body {
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    margin-bottom: 10px;
+    gap: 3px;
+    margin-bottom: 8px;
 }
 
 .form-group label {
     color: var(--text-primary);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: bold;
 }
 
@@ -366,20 +373,19 @@ html, body {
     border: 1px solid #5a0c0c;
     color: #fff;
     font-family: var(--font-mono);
-    padding: 8px 10px;
+    padding: 7px 9px;
     border-radius: 4px;
     outline: none;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .form-input:focus, .form-textarea:focus {
     border-color: var(--border-color);
-    box-shadow: 0 0 6px rgba(255, 42, 42, 0.4);
 }
 
 .form-row {
     display: flex;
-    gap: 10px;
+    gap: 8px;
 }
 
 .form-row .form-group {
@@ -392,12 +398,12 @@ html, body {
     border: none;
     font-weight: bold;
     font-family: var(--font-mono);
-    padding: 10px 16px;
+    padding: 9px 14px;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 13px;
     width: 100%;
-    margin-top: 8px;
+    margin-top: 6px;
     text-align: center;
 }
 
@@ -409,20 +415,20 @@ html, body {
 .info-block {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    font-size: 13px;
-    line-height: 1.5;
+    gap: 8px;
+    font-size: 12px;
+    line-height: 1.4;
 }
 
 .info-title {
     color: var(--text-primary);
     font-weight: bold;
-    font-size: 14px;
-    margin-top: 8px;
+    font-size: 13px;
+    margin-top: 6px;
 }
 
 .info-list {
-    padding-left: 14px;
+    padding-left: 12px;
     color: #ff9999;
 }
 
@@ -439,7 +445,7 @@ html, body {
     background: #030000;
     border: 1px solid #4a0808;
     border-radius: 6px;
-    min-height: 200px;
+    min-height: 180px;
 }
 
 .console-header {
@@ -447,16 +453,16 @@ html, body {
     justify-content: space-between;
     align-items: center;
     background: #120202;
-    padding: 8px 12px;
+    padding: 6px 10px;
     border-bottom: 1px solid #3a0808;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: bold;
     color: var(--text-bright);
 }
 
 .console-actions {
     display: flex;
-    gap: 6px;
+    gap: 5px;
 }
 
 .btn-danger-sm {
@@ -465,7 +471,7 @@ html, body {
     border: 1px solid #ff4444;
     font-family: var(--font-mono);
     font-size: 10px;
-    padding: 3px 8px;
+    padding: 2px 6px;
     border-radius: 3px;
     cursor: pointer;
 }
@@ -476,24 +482,24 @@ html, body {
     border: 1px solid #5a0c0c;
     font-family: var(--font-mono);
     font-size: 10px;
-    padding: 3px 8px;
+    padding: 2px 6px;
     border-radius: 3px;
     cursor: pointer;
 }
 
 .terminal-log {
     flex: 1;
-    padding: 10px;
+    padding: 8px;
     overflow-y: auto;
-    font-size: 13px;
-    line-height: 1.4;
-    max-height: 300px;
+    font-size: 12px;
+    line-height: 1.35;
+    max-height: 280px;
     -webkit-overflow-scrolling: touch;
     transform: translateZ(0);
 }
 
 .log-line {
-    margin-bottom: 4px;
+    margin-bottom: 3px;
     word-break: break-all;
 }
 

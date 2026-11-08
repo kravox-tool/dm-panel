@@ -20,7 +20,6 @@ import org.json.JSONObject
 import java.io.File
 import java.net.InetAddress
 import java.util.concurrent.TimeUnit
-import kotlin.random.Random
 
 class BotOperationManager(private val context: Context) {
     private val db by lazy { AppDatabase.getInstance(context) }
@@ -36,6 +35,9 @@ class BotOperationManager(private val context: Context) {
 
     private val _isOperationRunning = MutableStateFlow(false)
     val isOperationRunning: StateFlow<Boolean> = _isOperationRunning
+
+    private var chatPollingJob: Job? = null
+    private var lastChatMsgId: String? = null
 
     var logCallback: ((type: String, message: String, title: String) -> Unit)? = null
     var statusCallback: ((JSONObject) -> Unit)? = null
@@ -118,9 +120,8 @@ class BotOperationManager(private val context: Context) {
             val total = count.coerceIn(1, 200)
             val delayTime = delayMs.coerceAtLeast(150L)
 
-            emitLog("INFO", "Iniciando peticion POST /users/@me/channels en Discord API para abrir DM con User ID: $effectiveTarget...", "[DM-SPAM]")
+            emitLog("INFO", "Abriendo canal DM directo con User ID $effectiveTarget vía Discord API...", "[DM-SPAM]")
 
-            // Real Discord REST API Step 1: Open DM channel with target User ID
             val dmResult = createDiscordDmChannel(cleanToken, effectiveTarget)
             val dmChannelId = dmResult.first
             val dmError = dmResult.second
@@ -131,9 +132,8 @@ class BotOperationManager(private val context: Context) {
                 return@launch
             }
 
-            emitLog("SUCCESS", "[SUCCESS] Canal DM real creado/obtenido (DM Channel ID: $dmChannelId). Enviando $total mensaje(s)...", "[DM-SPAM]")
+            emitLog("SUCCESS", "[SUCCESS] Canal DM obtenido (DM Channel ID: $dmChannelId). Enviando $total mensaje(s)...", "[DM-SPAM]")
 
-            // Real Discord REST API Step 2: Dispatch payloads directly to DM channel
             for (i in 1..total) {
                 if (!_isOperationRunning.value) {
                     emitLog("WARN", "Ráfaga detenida por el usuario en $i/$total", "[DM-SPAM]")
@@ -142,9 +142,10 @@ class BotOperationManager(private val context: Context) {
 
                 if (i > 1) delay(delayTime)
 
-                val sendResult = sendDiscordApiMessage(cleanToken, dmChannelId, if (total > 1) "$effectiveMsg [#$i]" else effectiveMsg)
+                // Send exact message without appending numbers!
+                val sendResult = sendDiscordApiMessage(cleanToken, dmChannelId, effectiveMsg)
                 if (sendResult.first) {
-                    val statusText = "[$i/$total] -> [HTTP 200 OK] DM entregado a usuario ID @$effectiveTarget | Msg Snowflake ID: ${sendResult.second}"
+                    val statusText = "[$i/$total] -> [HTTP 200 OK] DM entregado a @$effectiveTarget | Msg Snowflake ID: ${sendResult.second}"
                     emitLog("BURST", statusText, "[DM-SPAM]")
                     db.logDao().insertLog(LogEntity(type = "BURST", title = "[DM-SPAM] User @$effectiveTarget", detail = statusText))
                 } else {
@@ -157,6 +158,43 @@ class BotOperationManager(private val context: Context) {
             _isOperationRunning.value = false
             emitLog("SUCCESS", "Proceso de ráfaga DM finalizado para usuario ID: $effectiveTarget", "[DM-SPAM]")
             updateSystemStatus()
+        }
+    }
+
+    fun startChatPolling(token: String, targetId: String) {
+        chatPollingJob?.cancel()
+        val cleanToken = token.trim()
+        val target = targetId.trim()
+
+        if (cleanToken.isEmpty() || target.isEmpty()) return
+
+        chatPollingJob = scope.launch {
+            val dmResult = createDiscordDmChannel(cleanToken, target)
+            val dmChannelId = dmResult.first ?: return@launch
+
+            emitLog("SYS", "[*] Escuchando mensajes en vivo de @$target en canal DM $dmChannelId...", "[CHAT CONSOLA]")
+
+            while (chatPollingJob?.isActive == true) {
+                try {
+                    delay(2500)
+                    val msgs = fetchDiscordChannelMessages(cleanToken, dmChannelId, 5)
+                    for (i in (msgs.length() - 1) downTo 0) {
+                        val msgObj = msgs.getJSONObject(i)
+                        val msgId = msgObj.optString("id")
+                        val author = msgObj.optJSONObject("author")
+                        val authorId = author?.optString("id")
+                        val authorName = author?.optString("username") ?: target
+                        val content = msgObj.optString("content")
+
+                        if (authorId == target && msgId != lastChatMsgId) {
+                            lastChatMsgId = msgId
+                            val incomingLine = "<- [@$authorName]: $content"
+                            emitLog("SUCCESS", incomingLine, "[CHAT RECIBIDO]")
+                            db.logDao().insertLog(LogEntity(type = "SUCCESS", title = "[CHAT] <- @$authorName", detail = content))
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
         }
     }
 
@@ -178,19 +216,19 @@ class BotOperationManager(private val context: Context) {
             emitLog("CHAT", userMsg, "[CHAT CONSOLA]")
             db.logDao().insertLog(LogEntity(type = "CHAT", title = "[CHAT] -> @$target", detail = text))
 
-            // Step 1: Open DM channel
             val dmResult = createDiscordDmChannel(cleanToken, target)
             val dmChannel = dmResult.first
             if (!dmChannel.isNullOrEmpty()) {
-                // Step 2: Send DM message
                 val res = sendDiscordApiMessage(cleanToken, dmChannel, text)
                 if (res.first) {
-                    emitLog("SUCCESS", "<- [@$target]: [HTTP 200 OK] Mensaje directo entregado al usuario ID @$target (Msg ID: ${res.second})", "[CHAT DISCORD]")
+                    emitLog("SUCCESS", "[HTTP 200 OK] Mensaje entregado a @$target (Msg ID: ${res.second})", "[CHAT DISCORD]")
+                    // Trigger live polling for incoming responses from target
+                    startChatPolling(cleanToken, target)
                 } else {
-                    emitLog("ERROR", "<- [@$target]: [ERROR DISCORD API] ${res.second}", "[CHAT DISCORD]")
+                    emitLog("ERROR", "[ERROR DISCORD API] ${res.second}", "[CHAT DISCORD]")
                 }
             } else {
-                emitLog("ERROR", "<- [@$target]: [ERROR DISCORD API] No se pudo abrir canal DM: ${dmResult.second}", "[CHAT DISCORD]")
+                emitLog("ERROR", "[ERROR DISCORD API] No se pudo abrir canal DM: ${dmResult.second}", "[CHAT DISCORD]")
             }
         }
     }
@@ -210,70 +248,69 @@ class BotOperationManager(private val context: Context) {
                 return@launch
             }
 
-            val target = serverId.trim()
-            if (target.isEmpty()) {
+            val targetServer = serverId.trim()
+            if (targetServer.isEmpty()) {
                 _isOperationRunning.value = false
-                emitLog("ERROR", "[ERROR PARAM] Ingrese una ID de servidor o usuario valida.", "[MASIVO]")
+                emitLog("ERROR", "[ERROR PARAM] Ingrese una ID de servidor valida.", "[MASIVO]")
                 return@launch
             }
 
-            val msg = message.trim().ifEmpty { "Aviso masivo de Kravox Tool" }
+            val msg = message.trim().ifEmpty { "Aviso masivo por DM desde Kravox Tool" }
             val runs = count.coerceIn(1, 50)
 
-            // Check if target is a single User ID or a Server ID
-            val dmCheck = createDiscordDmChannel(cleanToken, target)
-            val dmChannelId = dmCheck.first
+            emitLog("INFO", "Obteniendo miembros del Servidor ID $targetServer vía Discord API (GET /guilds/$targetServer/members)...", "[MASIVO]")
 
-            if (!dmChannelId.isNullOrEmpty()) {
-                // Target is a single User ID: Deliver direct DM broadcast
-                emitLog("INFO", "[MASIVO DM] Target detectado como Usuario ID @$target. Enviando $runs mensaje(s) directos por DM...", "[MASIVO]")
-                for (i in 1..runs) {
+            val membersResult = fetchDiscordGuildMembers(cleanToken, targetServer)
+            val members = membersResult.first
+            val memberErr = membersResult.second
+
+            if (members.isEmpty()) {
+                _isOperationRunning.value = false
+                emitLog("ERROR", "[ERROR DISCORD API] No se obtuvieron miembros del servidor $targetServer: $memberErr", "[MASIVO]")
+                return@launch
+            }
+
+            emitLog("WARN", "[MASIVO] Difusión por DM iniciada a ${members.size} miembro(s) del Servidor $targetServer ($runs repeticiones per user)", "[MASIVO]")
+
+            for (m in members) {
+                if (!_isOperationRunning.value) break
+
+                val memberId = m.optString("id")
+                val memberName = m.optString("username", memberId)
+                val isBot = m.optBoolean("isBot", false)
+
+                if (isBot && !includeBots) {
+                    continue
+                }
+
+                // Step 1: Open DM Channel for member
+                val dmRes = createDiscordDmChannel(cleanToken, memberId)
+                val dmChan = dmRes.first
+
+                if (dmChan.isNullOrEmpty()) {
+                    emitLog("ERROR", "[DM BLOQUEADO] No se pudo abrir DM con @$memberName (ID: $memberId): ${dmRes.second}", "[MASIVO]")
+                    continue
+                }
+
+                // Step 2: Send DM message(s) directly to member's inbox
+                for (r in 1..runs) {
                     if (!_isOperationRunning.value) break
-                    if (i > 1) delay(250)
-                    val res = sendDiscordApiMessage(cleanToken, dmChannelId, if (runs > 1) "$msg [#$i]" else msg)
-                    if (res.first) {
-                        val status = "[$i/$runs] [HTTP 200 OK] Mensaje masivo DM entregado al usuario ID @$target (Msg ID: ${res.second})"
-                        emitLog("WARN", status, "[MASIVO]")
-                        db.logDao().insertLog(LogEntity(type = "WARN", title = "[MASIVO DM] User @$target", detail = status))
+                    delay(350) // Rate limit delay
+
+                    val sendRes = sendDiscordApiMessage(cleanToken, dmChan, msg)
+                    if (sendRes.first) {
+                        val status = "[$r/$runs] [HTTP 200 OK] DM entregado a miembro @$memberName (ID: $memberId) | Msg ID: ${sendRes.second}"
+                        emitLog("BURST", status, "[MASIVO]")
+                        db.logDao().insertLog(LogEntity(type = "BURST", title = "[MASIVO] Member @$memberName", detail = status))
                     } else {
-                        emitLog("ERROR", "[$i/$runs] [ERROR DISCORD API] Fallo enviando DM masivo a usuario ID @$target: ${res.second}", "[MASIVO]")
-                    }
-                }
-            } else {
-                // Target is a Server ID: Fetch server channels and broadcast
-                emitLog("INFO", "Consultando canales del Servidor ID: $target en Discord API...", "[MASIVO]")
-                val channelResult = fetchDiscordServerChannels(cleanToken, target)
-                val channels = channelResult.first
-                val channelErr = channelResult.second
-
-                if (channels.isEmpty()) {
-                    _isOperationRunning.value = false
-                    emitLog("ERROR", "[ERROR DISCORD API] No se obtuvieron canales del servidor $target: $channelErr", "[MASIVO]")
-                    return@launch
-                }
-
-                emitLog("WARN", "[MASIVO] Difusión iniciada en ${channels.size} canal(es) de servidor $target ($runs repeticiones)", "[MASIVO]")
-
-                for (i in 1..runs) {
-                    if (!_isOperationRunning.value) break
-                    delay(300)
-
-                    for (channelId in channels) {
-                        if (!_isOperationRunning.value) break
-                        val res = sendDiscordApiMessage(cleanToken, channelId, if (runs > 1) "$msg [#$i]" else msg)
-                        if (res.first) {
-                            val status = "[$i/$runs] [HTTP 200 OK] Difusión entregada al canal #$channelId (Msg ID: ${res.second})"
-                            emitLog("WARN", status, "[MASIVO]")
-                            db.logDao().insertLog(LogEntity(type = "WARN", title = "[MASIVO] Server $target", detail = status))
-                        } else {
-                            emitLog("ERROR", "[$i/$runs] [ERROR DISCORD API] Canal #$channelId: ${res.second}", "[MASIVO]")
-                        }
+                        val errStatus = "[$r/$runs] [FALLO DM] @$memberName (ID: $memberId): ${sendRes.second}"
+                        emitLog("ERROR", errStatus, "[MASIVO]")
                     }
                 }
             }
 
             _isOperationRunning.value = false
-            emitLog("SUCCESS", "Difusión masiva finalizada para ID: $target", "[MASIVO]")
+            emitLog("SUCCESS", "Difusión masiva por DM a miembros finalizada para Servidor ID $targetServer", "[MASIVO]")
             updateSystemStatus()
         }
     }
@@ -312,7 +349,8 @@ class BotOperationManager(private val context: Context) {
             emitLog("FLASH", "[FLASH] Enviando $total mensaje(s) flash a $destLabel | Borrado en ${autoDeleteSec}s...", "[FLASH]")
 
             for (i in 1..total) {
-                val apiRes = sendDiscordApiMessage(cleanToken, channelId, if (total > 1) "$msg [#$i]" else msg)
+                // Send exact message without appending numbers!
+                val apiRes = sendDiscordApiMessage(cleanToken, channelId, msg)
                 if (apiRes.first) {
                     val msgId = apiRes.second
                     emitLog("FLASH", "[$i/$total] [HTTP 200 OK] Mensaje flash entregado a $destLabel (Msg Snowflake ID: $msgId)", "[FLASH]")
@@ -336,6 +374,7 @@ class BotOperationManager(private val context: Context) {
 
     fun stopOperations() {
         _isOperationRunning.value = false
+        chatPollingJob?.cancel()
         emitLog("ERROR", "Proceso detenido por el operador", "[SYSTEM]")
     }
 
@@ -416,11 +455,30 @@ class BotOperationManager(private val context: Context) {
         }
     }
 
-    private suspend fun fetchDiscordServerChannels(token: String, guildId: String): Pair<List<String>, String> = withContext(Dispatchers.IO) {
-        val list = mutableListOf<String>()
+    private suspend fun fetchDiscordChannelMessages(token: String, channelId: String, limit: Int): JSONArray = withContext(Dispatchers.IO) {
         try {
             val request = Request.Builder()
-                .url("https://discord.com/api/v10/guilds/$guildId/channels")
+                .url("https://discord.com/api/v10/channels/$channelId/messages?limit=$limit")
+                .header("Authorization", if (token.startsWith("Bot ")) token else "Bot $token")
+                .header("User-Agent", "DiscordBot (https://discord.com, v10)")
+                .get()
+                .build()
+
+            val response = httpClient.newCall(request).execute()
+            val bodyStr = response.body?.string() ?: ""
+
+            if (response.isSuccessful && bodyStr.isNotEmpty()) {
+                return@withContext JSONArray(bodyStr)
+            }
+        } catch (_: Exception) {}
+        return@withContext JSONArray()
+    }
+
+    private suspend fun fetchDiscordGuildMembers(token: String, guildId: String): Pair<List<JSONObject>, String> = withContext(Dispatchers.IO) {
+        val list = mutableListOf<JSONObject>()
+        try {
+            val request = Request.Builder()
+                .url("https://discord.com/api/v10/guilds/$guildId/members?limit=1000")
                 .header("Authorization", if (token.startsWith("Bot ")) token else "Bot $token")
                 .header("User-Agent", "DiscordBot (https://discord.com, v10)")
                 .get()
@@ -432,9 +490,14 @@ class BotOperationManager(private val context: Context) {
             if (response.isSuccessful && bodyStr.isNotEmpty()) {
                 val arr = JSONArray(bodyStr)
                 for (i in 0 until arr.length()) {
-                    val ch = arr.getJSONObject(i)
-                    if (ch.optInt("type", 0) == 0) { // GUILD_TEXT
-                        list.add(ch.optString("id"))
+                    val mObj = arr.getJSONObject(i)
+                    val uObj = mObj.optJSONObject("user")
+                    if (uObj != null) {
+                        val item = JSONObject()
+                        item.put("id", uObj.optString("id"))
+                        item.put("username", uObj.optString("username"))
+                        item.put("isBot", uObj.optBoolean("bot", false))
+                        list.add(item)
                     }
                 }
                 return@withContext Pair(list, "OK")

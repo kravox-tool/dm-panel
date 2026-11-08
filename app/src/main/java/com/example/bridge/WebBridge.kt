@@ -12,7 +12,6 @@ import com.example.data.AppDatabase
 import com.example.data.ConfigEntity
 import com.example.data.ScriptEntity
 import com.example.engine.BotOperationManager
-import com.example.engine.PythonExecutor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -28,41 +27,6 @@ class WebBridge(
 ) {
     private val db by lazy { AppDatabase.getInstance(context) }
     private val scope = CoroutineScope(Dispatchers.IO + Job())
-
-    private val pythonExecutor by lazy {
-        PythonExecutor(
-            onLogOutput = { type, text ->
-                emitJsLog(type, text, "[PYTHON]")
-            },
-            onActionTriggered = { action, params ->
-                val token = params["token"] ?: ""
-                when (action) {
-                    "send_dm" -> botManager.startDmBurst(
-                        token,
-                        params["targetId"] ?: "",
-                        params["message"] ?: "",
-                        1,
-                        500
-                    )
-                    "broadcast" -> botManager.startBroadcast(
-                        token,
-                        params["serverId"] ?: "Python-Server",
-                        params["message"] ?: "",
-                        params["count"]?.toIntOrNull() ?: 3,
-                        false
-                    )
-                    "flash_msg" -> botManager.sendFlashMessage(
-                        token,
-                        1,
-                        params["targetId"] ?: "",
-                        params["message"] ?: "",
-                        1,
-                        params["deleteSec"]?.toLongOrNull() ?: 1L
-                    )
-                }
-            }
-        )
-    }
 
     init {
         botManager.logCallback = { type, message, title ->
@@ -86,43 +50,45 @@ class WebBridge(
 
         when (optionNumber) {
             1 -> { // DM-SPAM
-                val targetId = params.optString("targetId", "8849201")
-                val message = params.optString("message", "Aviso directo")
+                val targetId = params.optString("targetId", "")
+                val message = params.optString("message", "")
                 val count = params.optInt("count", 1)
                 val delayMs = params.optLong("delayMs", 300L)
-                botManager.startDmBurst(token, targetId, message, count, delayMs)
+                if (token.isNotEmpty() && targetId.isNotEmpty()) {
+                    botManager.startDmBurst(token, targetId, message, count, delayMs)
+                }
             }
             2 -> { // CHAT
-                val targetId = params.optString("targetId", "7788")
-                val message = params.optString("message", "Hola consola")
-                botManager.sendChatMessage(token, targetId, message)
+                val targetId = params.optString("targetId", "")
+                val message = params.optString("message", "")
+                if (token.isNotEmpty() && targetId.isNotEmpty()) {
+                    botManager.sendChatMessage(token, targetId, message)
+                }
             }
             3 -> { // MASIVO
-                val serverId = params.optString("serverId", "556")
-                val message = params.optString("message", "Difusion masiva activa")
+                val serverId = params.optString("serverId", "")
+                val message = params.optString("message", "")
                 val count = params.optInt("count", 1)
                 val includeBots = params.optBoolean("includeBots", false)
-                botManager.startBroadcast(token, serverId, message, count, includeBots)
+                if (token.isNotEmpty() && serverId.isNotEmpty()) {
+                    botManager.startBroadcast(token, serverId, message, count, includeBots)
+                }
             }
             4 -> { // FLASH
                 val targetType = params.optInt("targetType", 1)
-                val targetId = params.optString("targetId", "78")
-                val message = params.optString("message", "Este mensaje expira")
+                val targetId = params.optString("targetId", "")
+                val message = params.optString("message", "")
                 val count = params.optInt("count", 1)
                 val autoDeleteSec = params.optLong("autoDeleteSec", 0L)
-                botManager.sendFlashMessage(token, targetType, targetId, message, count, autoDeleteSec)
+                if (token.isNotEmpty() && targetId.isNotEmpty()) {
+                    botManager.sendFlashMessage(token, targetType, targetId, message, count, autoDeleteSec)
+                }
             }
             5 -> { // INFO
                 scope.launch {
                     val info = botManager.getSystemInfoJson()
                     emitJs("window.onStatusUpdated(${info})")
-                    emitJsLog("INFO", "Requisitos verificados: Termux, Python 3.10+, discord.py >= 2.3.2, prompt_toolkit.", "[REQUISITOS]")
-                }
-            }
-            6 -> { // PYTHON
-                val code = params.optString("code", "")
-                if (code.isNotEmpty()) {
-                    runPythonScript(code)
+                    emitJsLog("INFO", "Requisitos verificados: Kravox Tool | Python 3.10+ | discord.py >= 2.3.2 | Discord Gateway v10 REST API.", "[KRAVOX TOOL]")
                 }
             }
             0 -> { // SALIR
@@ -172,26 +138,11 @@ class WebBridge(
     }
 
     @JavascriptInterface
-    fun runPythonScript(scriptCode: String) {
-        triggerHaptic()
-        scope.launch {
-            emitJsLog("INFO", "Ejecutando script discord.py...", "[PYTHON ENGINE]")
-            val output = pythonExecutor.executeScript(scriptCode)
-            db.scriptDao().insertScript(
-                ScriptEntity(title = "Script #${System.currentTimeMillis() % 1000}", code = scriptCode)
-            )
-            withContext(Dispatchers.Main) {
-                emitJs("window.onScriptFinished(${JSONObject.quote(output)})")
-            }
-        }
-    }
-
-    @JavascriptInterface
     fun saveConfig(key: String, value: String) {
         triggerHaptic()
         scope.launch {
             db.configDao().saveConfig(ConfigEntity(key = key, value = value))
-            emitJsLog("SUCCESS", "Configuración guardada en Room DB: $key", "[SYSTEM CONFIG]")
+            emitJsLog("SUCCESS", "Configuración guardada en Room DB: $key", "[KRAVOX TOOL]")
             showToast("Configuración '$key' guardada")
         }
     }
@@ -234,7 +185,7 @@ class WebBridge(
         triggerHaptic()
         scope.launch {
             db.logDao().clearAll()
-            emitJsLog("INFO", "Historial de logs limpiado de Room DB.", "[SYSTEM]")
+            emitJsLog("INFO", "Historial de logs limpiado de Room DB.", "[KRAVOX TOOL]")
             showToast("Logs eliminados")
         }
     }

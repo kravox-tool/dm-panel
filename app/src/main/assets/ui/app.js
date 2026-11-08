@@ -1,4 +1,4 @@
-// DM PANEL REACTIVE FRONTEND CONTROLLER (Strict Discord REST API Execution & Clean Typography)
+// DM PANEL - KRAVOX TOOL REACTIVE CONTROLLER
 
 let activeOption = 0;
 let savedToken = "";
@@ -34,7 +34,7 @@ function goBackToMenu() {
     if (panel) panel.classList.add("hidden");
     if (content) content.innerHTML = "";
 
-    appendLogLine("SYS", "[DM PANEL] Regreso al menú principal.");
+    appendLogLine("SYS", "[KRAVOX TOOL] Regreso al menú principal.");
 }
 
 function selectOption(optNum) {
@@ -50,7 +50,7 @@ function selectOption(optNum) {
 
     if (optNum === 0) {
         if (panel) panel.classList.add("hidden");
-        appendLogLine("ERROR", "[DM PANEL] Cerrando el lanzador...");
+        appendLogLine("ERROR", "[KRAVOX TOOL] Cerrando el lanzador...");
         if (window.AndroidBridge && typeof window.AndroidBridge.exitApp === 'function') {
             window.AndroidBridge.exitApp();
         }
@@ -83,19 +83,19 @@ function selectOption(optNum) {
 
                 <div class="section-label">[ CONFIGURACION DEL OBJETIVO ]</div>
                 <div class="wizard-prompt-line">
-                    <span class="prompt-symbol">-&gt; Coloca la ID del usuario a atacar:</span>
+                    <span class="prompt-symbol">-&gt; Coloca la ID del usuario:</span>
                     <input type="text" id="dm-target" class="form-input" style="flex:1;" value="" placeholder="ID del usuario objetivo">
                 </div>
 
                 <div class="section-label">[ CONFIGURACION DEL MENSAJE ]</div>
                 <div class="wizard-prompt-line">
                     <span class="prompt-symbol">-&gt; Escribe tu mensaje personalizado:</span>
-                    <input type="text" id="dm-msg" class="form-input" style="flex:1;" value="mensaje" placeholder="Mensaje a enviar">
+                    <input type="text" id="dm-msg" class="form-input" style="flex:1;" value="" placeholder="Mensaje exacto a enviar">
                 </div>
 
                 <div class="section-label">[ CONFIGURACION DE CANTIDAD ]</div>
                 <div class="wizard-prompt-line">
-                    <span class="prompt-symbol">-&gt; Cuantos mensajes enviar? (ENTER = 50):</span>
+                    <span class="prompt-symbol">-&gt; Cuantos mensajes enviar? (ENTER = 1):</span>
                     <input type="number" id="dm-count" class="form-input" style="flex:1;" value="1" min="1" max="200">
                 </div>
 
@@ -104,7 +104,7 @@ function selectOption(optNum) {
             `;
             break;
 
-        case 2: // CHAT MEDIA
+        case 2: // CHAT MEDIA (LIVE 2-WAY DM CHAT)
             content.innerHTML = `
                 ${backButtonHtml}
                 <pre class="ascii-art ascii-white">
@@ -137,7 +137,7 @@ function selectOption(optNum) {
 
                 <div class="wizard-step-box step-purple">
                     <div class="section-label-purple">PASO 3: MODO DE SESION</div>
-                    <div>1 -&gt; Entrar directamente al chat en vivo</div>
+                    <div>1 -&gt; Entrar directamente al chat en vivo por DM</div>
                     <div>2 -&gt; Consultar historial guardado con esta ID</div>
                     <div class="wizard-prompt-line" style="margin-top:6px;">
                         <span class="prompt-symbol">└─&gt; Elige opcion (1 o 2):</span>
@@ -146,20 +146,20 @@ function selectOption(optNum) {
                 </div>
 
                 <div class="wizard-prompt-line">
-                    <span class="prompt-symbol">Mensaje:</span>
-                    <input type="text" id="chat-msg" class="form-input" style="flex:1;" placeholder="Escribe mensaje...">
+                    <span class="prompt-symbol">Mensaje a enviar por DM:</span>
+                    <input type="text" id="chat-msg" class="form-input" style="flex:1;" placeholder="Escribe tu respuesta al usuario...">
                 </div>
 
-                <button onclick="launchChatSession()" class="btn-primary">[*] CONECTAR CON SERVIDORES DE DISCORD API</button>
+                <button onclick="launchChatSession()" class="btn-primary">[*] ENVIAR Y ESCUCHAR CHAT EN VIVO POR CONSOLA</button>
                 <div style="margin-top:10px;">${backButtonHtml}</div>
             `;
             break;
 
-        case 3: // MASIVO :: TODO EL SERVIDOR
+        case 3: // MASIVO :: TODOS LOS USUARIOS DEL SERVIDOR POR DM
             content.innerHTML = `
                 ${backButtonHtml}
                 <div class="divider">====================================================================</div>
-                <div class="panel-sub-header">MASIVO :: TODO EL SERVIDOR</div>
+                <div class="panel-sub-header">MASIVO :: DM A TODOS LOS MIEMBROS DEL SERVIDOR</div>
                 <div class="divider">====================================================================</div>
 
                 <div class="section-label">[ CONFIGURACION DE CONEXION ]</div>
@@ -171,13 +171,13 @@ function selectOption(optNum) {
                 <div class="section-label">[ CONFIGURACION DEL SERVIDOR ]</div>
                 <div class="wizard-prompt-line">
                     <span class="prompt-symbol">-&gt; Coloca la ID del servidor:</span>
-                    <input type="text" id="masivo-server" class="form-input" style="flex:1;" value="" placeholder="ID del servidor">
+                    <input type="text" id="masivo-server" class="form-input" style="flex:1;" value="" placeholder="ID del servidor de Discord">
                 </div>
 
                 <div class="section-label">[ CONFIGURACION DEL MENSAJE ]</div>
                 <div class="wizard-prompt-line">
                     <span class="prompt-symbol">-&gt; Escribe tu mensaje personalizado:</span>
-                    <input type="text" id="masivo-msg" class="form-input" style="flex:1;" value="mensaje" placeholder="Mensaje masivo">
+                    <input type="text" id="masivo-msg" class="form-input" style="flex:1;" value="" placeholder="Mensaje masivo para DMs de miembros">
                 </div>
 
                 <div class="section-label">[ CONFIGURACION DE CANTIDAD ]</div>
@@ -192,7 +192,7 @@ function selectOption(optNum) {
                     <input type="text" id="masivo-bots" class="form-input" style="width:70px;" value="N" maxlength="1">
                 </div>
 
-                <button onclick="launchMasivo()" class="btn-primary">🚀 INICIAR DIFUSIÓN MASIVA DISCORD API</button>
+                <button onclick="launchMasivo()" class="btn-primary">🚀 INICIAR DIFUSIÓN DM A MIEMBROS DEL SERVIDOR</button>
                 <div style="margin-top:10px;">${backButtonHtml}</div>
             `;
             break;
@@ -211,21 +211,21 @@ function selectOption(optNum) {
                 </div>
 
                 <div class="section-label">[ DESTINO ]</div>
-                <div>[1] Un usuario (por ID)</div>
-                <div>[2] Todos los usuarios de un servidor (por ID)</div>
+                <div>[1] Un usuario por DM (por User ID)</div>
+                <div>[2] Un canal de servidor (por Channel ID)</div>
                 <div class="wizard-prompt-line" style="margin-top:6px;">
                     <span class="prompt-symbol">-&gt; Elige 1 o 2:</span>
-                    <input type="number" id="flash-type" class="form-input" style="width:70px;" value="2" min="1" max="2" onchange="updateFlashLabel()">
+                    <input type="number" id="flash-type" class="form-input" style="width:70px;" value="1" min="1" max="2" onchange="updateFlashLabel()">
                 </div>
                 <div class="wizard-prompt-line">
-                    <span id="flash-id-label" class="prompt-symbol">-&gt; ID del servidor destino:</span>
+                    <span id="flash-id-label" class="prompt-symbol">-&gt; ID del usuario destino:</span>
                     <input type="text" id="flash-target" class="form-input" style="flex:1;" value="" placeholder="ID de destino">
                 </div>
 
                 <div class="section-label">[ CONFIGURACION DEL MENSAJE ]</div>
                 <div class="wizard-prompt-line">
                     <span class="prompt-symbol">-&gt; Escribe tu mensaje:</span>
-                    <input type="text" id="flash-msg" class="form-input" style="flex:1;" value="mensaje" placeholder="Mensaje flash">
+                    <input type="text" id="flash-msg" class="form-input" style="flex:1;" value="" placeholder="Mensaje flash a borrar">
                 </div>
 
                 <div class="section-label">[ CONFIGURACION DE CANTIDAD ]</div>
@@ -249,16 +249,16 @@ function selectOption(optNum) {
             content.innerHTML = `
                 ${backButtonHtml}
                 <div class="divider">====================================================================</div>
-                <div class="panel-sub-header">INFORMACION / REQUISITOS - DM PANEL</div>
+                <div class="panel-sub-header">INFORMACION / REQUISITOS - KRAVOX TOOL</div>
                 <div class="divider">====================================================================</div>
 
                 <div class="info-block">
                     <div class="info-title">FUNCIONES DEL PANEL</div>
                     <div class="info-list">
-                        <div>- <b>DM-SPAM</b>  rafaga de DMs a una ID</div>
-                        <div>- <b>CHAT</b>     chat en vivo por consola con una ID</div>
-                        <div>- <b>MASIVO</b>   mensaje x veces a todos los usuarios de un servidor</div>
-                        <div>- <b>FLASH</b>    enviar a un usuario o servidor y borrar rapido</div>
+                        <div>- <b>DM-SPAM</b>  rafaga de DMs directos a una ID</div>
+                        <div>- <b>CHAT</b>     chat en vivo bidireccional por consola con una ID de usuario</div>
+                        <div>- <b>MASIVO</b>   mensaje masivo por DM a todos los miembros de un servidor</div>
+                        <div>- <b>FLASH</b>    enviar mensaje por DM o canal y borrar rapido</div>
                     </div>
 
                     <div class="info-title">REQUISITOS</div>
@@ -291,32 +291,6 @@ function selectOption(optNum) {
                 <div style="margin-top:14px;">${backButtonHtml}</div>
             `;
             break;
-
-        case 6: // PYTHON SCRIPT RUNNER
-            content.innerHTML = `
-                ${backButtonHtml}
-                <div class="divider">====================================================================</div>
-                <div class="panel-sub-header">EJECUTOR DE SCRIPTS PYTHON (DISCORD.PY)</div>
-                <div class="divider">====================================================================</div>
-
-                <div class="form-group">
-                    <label>SINTAXIS DISCORD.PY / PYTHON 3.10:</label>
-                    <textarea id="python-code" class="form-textarea" rows="7" spellcheck="false">import discord
-from discord.ext import commands
-
-token = "${savedToken}"
-target_id = "123456789"
-
-print("Iniciando script discord.py...")
-send_dm(target_id, "Hola desde script Python de DM Panel!")
-sleep(0.5)
-broadcast("Mensaje masivo desde discord.py", 2)
-print("Ejecución finalizada.")</textarea>
-                </div>
-                <button onclick="runPythonEngine()" class="btn-primary">⚡ EJECUTAR SCRIPT DISCORD.PY</button>
-                <div style="margin-top:10px;">${backButtonHtml}</div>
-            `;
-            break;
     }
 
     if (window.AndroidBridge && typeof window.AndroidBridge.executeOption === 'function') {
@@ -331,7 +305,7 @@ function updateFlashLabel() {
         if (type === "1") {
             label.textContent = "-> ID del usuario destino:";
         } else {
-            label.textContent = "-> ID del servidor destino:";
+            label.textContent = "-> ID del canal destino:";
         }
     }
 }
@@ -351,21 +325,20 @@ function submitCliInput() {
     else if (val === "3" || val === "masivo") selectOption(3);
     else if (val === "4" || val === "flash") selectOption(4);
     else if (val === "5" || val === "info") selectOption(5);
-    else if (val === "6" || val === "python" || val === "py") selectOption(6);
     else if (val === "0" || val === "salir" || val === "exit") selectOption(0);
     else if (val === "clear" || val === "cls") clearTerminalLog();
     else if (val === "matrix") triggerMatrix();
     else if (val === "history") loadHistory();
     else if (val === "help") {
-        appendLogLine("WARN", "Comandos: 1 (DM-SPAM), 2 (CHAT), 3 (MASIVO), 4 (FLASH), 5 (INFO), 6 (PYTHON), 0 (SALIR), clear, history, matrix, stop");
+        appendLogLine("WARN", "Comandos: 1 (DM-SPAM), 2 (CHAT), 3 (MASIVO), 4 (FLASH), 5 (INFO), 0 (SALIR), clear, history, matrix, stop");
     } else if (val === "stop") {
         stopActiveProcess();
     } else {
-        appendLogLine("ERROR", `Comando no reconocido: '${val}'. Escribe 'help' o elige 0-6.`);
+        appendLogLine("ERROR", `Comando no reconocido: '${val}'. Escribe 'help' o elige 0-5.`);
     }
 }
 
-// STRICT LAUNCHERS (Zero Simulation)
+// STRICT LAUNCHERS WITH EXACT TOKEN PASSING
 function launchDmBurst() {
     const token = document.getElementById("dm-token")?.value.trim() || "";
     const target = document.getElementById("dm-target")?.value.trim() || "";
@@ -416,8 +389,6 @@ function launchChatSession() {
         return;
     }
 
-    appendLogLine("SYS", "[*] Enviando petición a la API REST de Discord...");
-
     if (msg && window.AndroidBridge && typeof window.AndroidBridge.sendChatMessage === 'function') {
         window.AndroidBridge.sendChatMessage(token, target, msg);
         const input = document.getElementById("chat-msg");
@@ -452,14 +423,14 @@ function launchMasivo() {
 
 function launchFlash() {
     const token = document.getElementById("flash-token")?.value.trim() || "";
-    const targetType = parseInt(document.getElementById("flash-type")?.value || "2");
+    const targetType = parseInt(document.getElementById("flash-type")?.value || "1");
     const target = document.getElementById("flash-target")?.value.trim() || "";
     const msg = document.getElementById("flash-msg")?.value.trim() || "";
     const count = parseInt(document.getElementById("flash-count")?.value || "1");
     const autoDeleteSec = parseInt(document.getElementById("flash-delete-sec")?.value || "0");
 
     if (!token) {
-        appendLogLine("ERROR", "[ERROR 401] Token de Bot requerido.");
+        appendLogLine("ERROR", "[ERROR 401] Token de Bot requerido. Por favor rellene el token.");
         return;
     }
 
@@ -470,15 +441,10 @@ function launchFlash() {
 
     savedToken = token;
 
-    if (window.AndroidBridge && typeof window.AndroidBridge.startFlashMessage === 'function') {
+    if (window.AndroidBridge && typeof window.AndroidBridge.sendFlashMessage === 'function') {
         window.AndroidBridge.sendFlashMessage(token, targetType, target, msg, count, autoDeleteSec);
-    }
-}
-
-function runPythonEngine() {
-    const code = document.getElementById("python-code")?.value || "";
-    if (window.AndroidBridge && typeof window.AndroidBridge.runPythonScript === 'function') {
-        window.AndroidBridge.runPythonScript(code);
+    } else {
+        appendLogLine("ERROR", "[ERROR] Interfaz nativa sendFlashMessage no encontrada.");
     }
 }
 
@@ -497,7 +463,7 @@ function loadHistory() {
 function clearTerminalLog() {
     const logContainer = document.getElementById("terminal-log");
     if (logContainer) {
-        logContainer.innerHTML = '<div class="log-line log-sys">[DM PANEL] Consola de terminal limpiada.</div>';
+        logContainer.innerHTML = '<div class="log-line log-sys">[KRAVOX TOOL] Consola de terminal limpiada.</div>';
     }
     if (window.AndroidBridge && typeof window.AndroidBridge.clearLogs === 'function') {
         window.AndroidBridge.clearLogs();
@@ -527,8 +493,8 @@ function appendLogLine(type, text, title = "") {
 }
 
 function triggerMatrix() {
-    appendLogLine("SYS", "01000100 01001101 00100000 01010000 01000001 01001110 01000101 01001100");
-    appendLogLine("SUCCESS", "[MATRIX MODE] DM PANEL - discord.py 2.3.2 verificado.");
+    appendLogLine("SYS", "00101101 01001011 01010010 01000001 01010110 01001111 01011000");
+    appendLogLine("SUCCESS", "[MATRIX MODE] KRAVOX TOOL - discord.py 2.3.2 activo.");
 }
 
 // ANDROID SYSTEM BACK BUTTON HANDLER
@@ -560,13 +526,6 @@ window.onTokenValidated = function(resObj) {
     if (resObj && resObj.valid) {
         appendLogLine("SUCCESS", `[TOKEN VALIDATED] Bot: @${resObj.botName} (ID: ${resObj.botId})`);
     }
-};
-
-window.onScriptFinished = function(output) {
-    appendLogLine("SUCCESS", "[PYTHON] Script finalizado. Salida:");
-    output.split("\n").forEach(l => {
-        if (l.trim()) appendLogLine("INFO", l);
-    });
 };
 
 window.onConfigsLoaded = function(configsArr) {

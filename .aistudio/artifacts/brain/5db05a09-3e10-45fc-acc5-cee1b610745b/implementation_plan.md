@@ -1,55 +1,53 @@
-# DM Panel - Kravox Tool Branding & Real Discord DM Delivery Plan
+# DM Panel - Comprehensive UI & Discord REST API Feature Fix Plan
 
-Update the application subtitle under the main ASCII banner to `=== KRAVOX TOOL ===` and audit/fortify all functions (DM-SPAM, CHAT, MASIVO, FLASH) to guarantee that entering any target User ID opens a real Discord DM channel and delivers direct messages via Discord's REST API.
+Fix prompt button layout overflow, remove function 6 (PYTHON), remove auto-numbered message suffixes (`[#1]`, `[#2]`), implement live 2-way DM console chat, update MASIVO to send direct messages to all server members, and resolve the FLASH token error.
 
 ## User Review & Critical Decisions
 
 > [!IMPORTANT]
-> The following design decisions were confirmed by the user during Phase 1 clarification:
+> The plan addresses all 6 issues identified by the user in the mobile screenshot and brief:
 
-- **Confirmed Decision 1 (Sub-Header Branding)**: The small text below the main ASCII `DM PANEL` banner will display the symmetrical cyber banner: `=== KRAVOX TOOL ===`.
-- **Confirmed Decision 2 (Real Discord DM Delivery to User ID Across All Functions)**: Whenever a user inputs a Target User ID in DM-SPAM, CHAT, MASIVO, or FLASH:
-  1. The bot invokes `POST https://discord.com/api/v10/users/@me/channels` with `recipient_id = <USER_ID>` to acquire the official 1-on-1 DM channel.
-  2. The bot sends the payload directly to `POST https://discord.com/api/v10/channels/<CHANNEL_ID>/messages`.
-  3. The real Discord message ID, channel ID, and HTTP 200 OK status are printed to the terminal console.
+- **Fix 1 (Prompt Bar Button Layout Overflow)**: Update `.prompt-bar` in `style.css` so the red `EJECUTAR` button and command input flex cleanly within screen bounds without overflowing horizontally.
+- **Fix 2 (Remove Function 6)**: Remove `[6] PYTHON` entirely from `index.html`, `app.js`, `style.css`, and the quick action button row.
+- **Fix 3 (Exact Message Content)**: Remove any appended sequence numbers (`[#1]`, `[#2]`) so messages are delivered exactly as authored.
+- **Fix 4 (Live 2-Way CHAT Console)**: In `CHAT`, poll `GET /channels/{dmChannel}/messages` for incoming DMs from the target User ID and stream them to the console (`<- [@User]: message`), allowing real-time response from the CLI prompt (`-> [@User]: message`).
+- **Fix 5 (MASIVO DM to Server Members)**: Refactor `MASIVO` to fetch guild members via `GET /guilds/{serverId}/members?limit=1000` and send a 1-on-1 Direct Message to every member's inbox.
+- **Fix 6 (FLASH Token Passing Fix)**: Correct `launchFlash()` in `app.js` to pass `token` cleanly to `@JavascriptInterface sendFlashMessage()`.
 
 ---
 
 ## 1. Overview & Core Concept
 
-- **What It Does**: Enhances the visual branding with **KRAVOX TOOL** and guarantees that every operation targeting a Discord User ID performs genuine 1-on-1 direct message creation and delivery through Discord's REST API endpoints.
-- **Target Audience**: Discord Bot developers requiring reliable, real-world DM testing and administration.
-- **Key Value**: Distinctive branding and 100% verified real-world Discord Direct Message delivery.
+- **What It Does**: Resolves all UI overflow issues and refactors feature behaviors so that DM-SPAM, CHAT, MASIVO, and FLASH execute real Discord REST API actions with exact message payloads and real-time DM streaming.
+- **Target Audience**: Discord Bot developers requiring precision DM tools and clean mobile terminal UX.
 
 ---
 
 ## 2. User Experience & Visual Design
 
-### Header Visual Hierarchy
+### Prompt Bar Layout Refactoring
 
 ```
-  ██████╗ ███╗   ███╗    ██████╗  █████╗ ███╗   ██╗███████╗██╗
-  ██╔══██╗████╗ ████║    ██╔══██╗██╔══██╗████╗  ██║██╔════╝██║
-  ██║  ██║██╔████╔██║    ██████╔╝███████║██╔██╗ ██║█████╗  ██║
-  ██║  ██║██║╚██╔╝██║    ██╔═══╝ ██╔══██║██║╚██╗██║██╔══╝  ██║
-  ██████╔╝██║ ╚═╝ ██║    ██║     ██║  ██║██║ ╚████║███████╗███████╗
-  ╚═════╝ ╚═╝     ╚═╝    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝
-====================================================================
-                        === KRAVOX TOOL ===
-====================================================================
+┌───────────────────────────────────────────────────────────────┐
+│ -> Elige una opcion: [1-5 o comando]                          │
+├───────────────────────────────────────────────────────────────┤
+│ [ EJECUTAR ]                                                  │
+└───────────────────────────────────────────────────────────────┘
 ```
 
-- **Header Text**: Clean red glowing ASCII block banner `DM PANEL` followed by `=== KRAVOX TOOL ===`.
+- **Responsive Prompt Bar**: Input on top row, full-width `EJECUTAR` button below or wrapped flex container, preventing right-edge clipping.
+- **Menu Items**: Clean 5-function menu (`[1] DM-SPAM`, `[2] CHAT`, `[3] MASIVO`, `[4] FLASH`, `[5] INFO`, `[0] SALIR`).
 
 ---
 
 ## 3. Key Product Decisions & Trade-Offs
 
-- **Decision 1: Universal DM Channel Resolution Strategy**
-  - *Chosen Approach*: Standardize the two-step Discord REST API direct message flow across all four main features:
-    1. Resolve/Open DM channel for target User ID (`POST /users/@me/channels`).
-    2. Dispatch direct message payload (`POST /channels/{dmChannelId}/messages`).
-  - *Why*: Guarantees that typing a 17-19 digit Discord User ID in any function (DM-SPAM, CHAT, MASIVO, FLASH) routes directly to that user's private DM inbox.
+- **Decision 1: MASIVO Server Member Resolution**
+  - *Chosen Approach*: Query `GET /guilds/{serverId}/members?limit=1000` -> iterate through member User IDs -> call `POST /users/@me/channels` -> send DM payload.
+  - *Why*: Directly aligns with user requirement to DM all members of a server.
+
+- **Decision 2: CHAT Real-time Message Polling**
+  - *Chosen Approach*: Maintain a 2-second background poll loop in `BotOperationManager` for the active CHAT DM channel ID, appending new incoming messages to the console log (`<- [@User]: text`).
 
 ---
 
@@ -57,33 +55,26 @@ Update the application subtitle under the main ASCII banner to `=== KRAVOX TOOL 
 
 ```
 ┌───────────────────────────────────────────────────────────────┐
-│                    User Enters Target User ID                 │
+│                    DM Panel UI (app.js)                       │
+│  [1] DM-SPAM | [2] CHAT | [3] MASIVO | [4] FLASH | [5] INFO    │
 └───────────────────────────────┬───────────────────────────────┘
-                                │
-                                ▼
-┌───────────────────────────────────────────────────────────────┐
-│              Step 1: POST /users/@me/channels                 │
-│              Payload: {"recipient_id": "USER_ID"}             │
-└───────────────────────────────┬───────────────────────────────┘
-                                │
-                                ▼ Returns DM Channel ID
-┌───────────────────────────────────────────────────────────────┐
-│            Step 2: POST /channels/{channel_id}/messages       │
-│               Payload: {"content": "MESSAGE"}                 │
-└───────────────────────────────┬───────────────────────────────┘
-                                │
-                                ▼ HTTP 200 OK
-┌───────────────────────────────────────────────────────────────┐
-│            Direct Message Delivered to Discord Inbox          │
-│        Terminal Log: [HTTP 200 OK] DM entregado a @USER_ID    │
+                                │ Calls AndroidBridge
+┌───────────────────────────────▼───────────────────────────────┐
+│               BotOperationManager.kt (IO Scope)               │
+│                                                               │
+│  ├─ CHAT: Polling GET /channels/{dmId}/messages -> UI Log     │
+│  ├─ MASIVO: GET /guilds/{id}/members -> DM each member ID     │
+│  └─ FLASH: POST /messages -> delay -> DELETE /messages/{id}   │
 └───────────────────────────────────────────────────────────────┘
 ```
 
-### Module Verification Matrix
+### Bug Fix Implementation Matrix
 
-| Function | User ID Target Handling | Discord REST API Endpoint |
+| Issue | Target File | Fix Applied |
 |---|---|---|
-| **DM-SPAM** | Recipient User ID | `POST /users/@me/channels` -> `POST /channels/{id}/messages` |
-| **CHAT** | Recipient User ID | `POST /users/@me/channels` -> `POST /channels/{id}/messages` |
-| **MASIVO** | Server Guild ID / User ID | `GET /guilds/{id}/channels` or Direct DM User Resolution |
-| **FLASH** | Recipient User ID / Channel | `POST /users/@me/channels` -> `POST /messages` -> `DELETE /messages/{id}` |
+| Prompt Button Overflow | `style.css` | Flex-direction column/wrap on `.prompt-bar` |
+| Remove Function 6 | `index.html`, `app.js` | Delete option 6 from menu and handlers |
+| Message Suffix Numbers | `BotOperationManager.kt` | Send raw `effectiveMsg` without `[#i]` |
+| Live Chat 2-Way | `BotOperationManager.kt` | Implement DM polling listener loop |
+| MASIVO DM Server Members | `BotOperationManager.kt` | Query `/guilds/{id}/members` -> DM each member |
+| FLASH Token Error | `app.js` | Fix `launchFlash` token argument signature |

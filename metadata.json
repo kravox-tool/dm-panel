@@ -1,0 +1,6 @@
+{
+  "name": "DM Panel",
+  "description": "Panel de control DM Panel para bots de Discord con comandos REST API, ejecutor de scripts Python y almacenamiento Room DB.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

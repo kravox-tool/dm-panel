@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>DM Panel - Kravox Tool</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="crt-overlay"></div>
+
+    <div class="app-container">
+        <!-- HEADER ASCII & STATUS -->
+        <header class="terminal-header">
+            <div class="header-status-bar">
+                <span id="system-status-badge" class="badge badge-online">● ONLINE</span>
+                <span id="token-status-badge" class="badge">discord.py >= 2.3.2</span>
+                <span id="fps-badge" class="badge">120 FPS</span>
+                <span id="ping-badge" class="badge">PING: <span id="ping-val">24</span>ms</span>
+            </div>
+            
+            <pre class="ascii-art">
+  ██████╗ ███╗   ███╗    ██████╗  █████╗ ███╗   ██╗███████╗██╗
+  ██╔══██╗████╗ ████║    ██╔══██╗██╔══██╗████╗  ██║██╔════╝██║
+  ██║  ██║██╔████╔██║    ██████╔╝███████║██╔██╗ ██║█████╗  ██║
+  ██║  ██║██║╚██╔╝██║    ██╔═══╝ ██╔══██║██║╚██╗██║██╔══╝  ██║
+  ██████╔╝██║ ╚═╝ ██║    ██║     ██║  ██║██║ ╚████║███████╗███████╗
+  ╚═════╝ ╚═╝     ╚═╝    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝</pre>
+
+            <div class="divider">====================================================================</div>
+            <div class="header-subtitle">=== KRAVOX TOOL ===</div>
+            <div class="divider">====================================================================</div>
+        </header>
+
+        <!-- MAIN MENU OPTIONS LIST -->
+        <section id="main-menu" class="menu-section">
+            <div class="menu-item" onclick="selectOption(1)">
+                <span class="option-num">[1]</span>
+                <span class="option-title">DM-SPAM</span>
+                <span class="option-desc">rafaga de mensajes directos a una ID</span>
+            </div>
+            <div class="menu-item" onclick="selectOption(2)">
+                <span class="option-num">[2]</span>
+                <span class="option-title">CHAT</span>
+                <span class="option-desc">chat en vivo por consola con una ID</span>
+            </div>
+            <div class="menu-item" onclick="selectOption(3)">
+                <span class="option-num">[3]</span>
+                <span class="option-title">MASIVO</span>
+                <span class="option-desc">mensaje x veces a todos los usuarios del servidor</span>
+            </div>
+            <div class="menu-item" onclick="selectOption(4)">
+                <span class="option-num">[4]</span>
+                <span class="option-title">FLASH</span>
+                <span class="option-desc">enviar a usuario o servidor y borrar rapido</span>
+            </div>
+            <div class="menu-item" onclick="selectOption(5)">
+                <span class="option-num">[5]</span>
+                <span class="option-title">INFO</span>
+                <span class="option-desc">requisitos, token e intents necesarios</span>
+            </div>
+            <div class="menu-item" onclick="selectOption(6)">
+                <span class="option-num">[6]</span>
+                <span class="option-title">PYTHON</span>
+                <span class="option-desc">ejecutor de scripts python (discord.py)</span>
+            </div>
+            <div class="menu-item menu-exit" onclick="selectOption(0)">
+                <span class="option-num">[0]</span>
+                <span class="option-title">SALIR</span>
+                <span class="option-desc">cerrar el lanzador</span>
+            </div>
+        </section>
+
+        <!-- QUICK BUTTONS BAR FOR MOBILE ACCESSIBILITY -->
+        <div class="quick-nav">
+            <button onclick="selectOption(1)">[1] DM</button>
+            <button onclick="selectOption(2)">[2] CHAT</button>
+            <button onclick="selectOption(3)">[3] MASIVO</button>
+            <button onclick="selectOption(4)">[4] FLASH</button>
+            <button onclick="selectOption(5)">[5] INFO</button>
+            <button onclick="selectOption(6)">[6] PYTHON</button>
+            <button onclick="clearTerminalLog()">[CLEAR]</button>
+            <button onclick="loadHistory()">[HISTORIAL]</button>
+        </div>
+
+        <!-- COMMAND PROMPT INPUT BAR -->
+        <div class="prompt-bar">
+            <span class="prompt-symbol">-&gt; Elige una opcion:</span>
+            <input type="text" id="cli-input" class="cli-input" placeholder="Escribe 1-6 o comando (help, clear)..." autocomplete="off" spellcheck="false" autofocus>
+            <button class="btn-send" onclick="submitCliInput()">EJECUTAR</button>
+        </div>
+
+        <!-- TERMINAL INTERACTIVE SINGLE-SCREEN WIZARD PANEL -->
+        <section id="action-panel" class="action-panel hidden">
+            <div id="panel-content"></div>
+        </section>
+
+        <!-- REALTIME TERMINAL LOG CONSOLE (STRICT DISCORD REST API LOGS) -->
+        <section class="console-section">
+            <div class="console-header">
+                <span>CONSOLA DE SALIDA EN VIVO (DISCORD REST API LOGS)</span>
+                <div class="console-actions">
+                    <button onclick="stopActiveProcess()" class="btn-danger-sm">DETENER PROCESO</button>
+                    <button onclick="clearTerminalLog()" class="btn-sec-sm">LIMPIAR</button>
+                </div>
+            </div>
+            <div id="terminal-log" class="terminal-log">
+                <div class="log-line log-sys">[KRAVOX TOOL] Consola Discord API lista. Ingrese su Bot Token y elija una opción...</div>
+            </div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

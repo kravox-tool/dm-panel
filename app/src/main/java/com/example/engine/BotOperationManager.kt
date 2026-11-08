@@ -37,7 +37,7 @@ class BotOperationManager(private val context: Context) {
     val isOperationRunning: StateFlow<Boolean> = _isOperationRunning
 
     private var chatPollingJob: Job? = null
-    private var lastChatMsgId: String? = null
+    private val seenChatMsgIds = LinkedHashSet<String>()
 
     var logCallback: ((type: String, message: String, title: String) -> Unit)? = null
     var statusCallback: ((JSONObject) -> Unit)? = null
@@ -174,6 +174,16 @@ class BotOperationManager(private val context: Context) {
 
             emitLog("SYS", "[*] Escuchando mensajes en vivo de @$target en canal DM $dmChannelId...", "[CHAT CONSOLA]")
 
+            // Pre-seed seenChatMsgIds with existing past messages so they are not re-logged
+            try {
+                val initialMsgs = fetchDiscordChannelMessages(cleanToken, dmChannelId, 10)
+                for (i in 0 until initialMsgs.length()) {
+                    val m = initialMsgs.getJSONObject(i)
+                    val id = m.optString("id")
+                    if (id.isNotEmpty()) seenChatMsgIds.add(id)
+                }
+            } catch (_: Exception) {}
+
             while (chatPollingJob?.isActive == true) {
                 try {
                     delay(2500)
@@ -186,8 +196,12 @@ class BotOperationManager(private val context: Context) {
                         val authorName = author?.optString("username") ?: target
                         val content = msgObj.optString("content")
 
-                        if (authorId == target && msgId != lastChatMsgId) {
-                            lastChatMsgId = msgId
+                        if (authorId == target && msgId.isNotEmpty() && !seenChatMsgIds.contains(msgId)) {
+                            seenChatMsgIds.add(msgId)
+                            if (seenChatMsgIds.size > 200) {
+                                val first = seenChatMsgIds.iterator().next()
+                                seenChatMsgIds.remove(first)
+                            }
                             val incomingLine = "<- [@$authorName]: $content"
                             emitLog("SUCCESS", incomingLine, "[CHAT RECIBIDO]")
                             db.logDao().insertLog(LogEntity(type = "SUCCESS", title = "[CHAT] <- @$authorName", detail = content))
@@ -375,6 +389,7 @@ class BotOperationManager(private val context: Context) {
     fun stopOperations() {
         _isOperationRunning.value = false
         chatPollingJob?.cancel()
+        seenChatMsgIds.clear()
         emitLog("ERROR", "Proceso detenido por el operador", "[SYSTEM]")
     }
 
